@@ -1,0 +1,190 @@
+/*
+ * Elepheye
+ *
+ * Copyright (c) 2009 Michito Kaji
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#include <elepheye/resource.h>
+
+STRINGTABLE
+{
+  ELEPHEYE_RESOURCE_IDS_ISSUE_ALLOCATE_MEMORY
+  "Failed to allocate the memory"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_CLOSE_HANDLE
+  "Failed to close the handle"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_COMPARE_RECORDS
+  "Failed to compare records"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_COMPUTE_HASH
+  "Failed to compute the hash"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_CREATE_FILTER
+  "Failed to create the record filter"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_CREATE_SOURCE
+  "Failed to create the record source"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_DISABLE_PRIVILEGE
+  "Failed to disable the privilege"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_ENABLE_PRIVILEGE
+  "Failed to enable the privilege"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_FIND_DIRECTORY_CONTENTS
+  "Failed to find directory contents"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_FIND_FILE_STREAMS
+  "Failed to find file streams"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_FIND_REGISTRY_SUB_KEYS
+  "Failed to find registry sub keys"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_FIND_REGISTRY_VALUES
+  "Failed to find registry values"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_OPEN_FILE
+  "Failed to open the file"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_OPEN_REGISTRY_KEY
+  "Failed to open the registry key"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_PARSE_CSV
+  "Failed to parse the CSV text"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_PARSE_RULE
+  "Failed to parse the rule text"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_DACL
+  "Failed to read the DACL security information"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_FILE
+  "Failed to read the file"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_FILESYSTEM
+  "Failed to read the filesystem information"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_GROUP
+  "Failed to read the GROUP security information"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_OWNER
+  "Failed to read the OWNER security information"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_RECORD
+  "Failed to read the record"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_REGISTRY
+  "Failed to read the registry information"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_SACL
+  "Failed to read the SACL security information"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_TEXT
+  "Failed to read the text"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_READ_WMI
+  "Failed to read the WMI information"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_UNEXPECTED
+  "Unexpected error"
+
+  ELEPHEYE_RESOURCE_IDS_ISSUE_WRITE_FILE
+  "Failed to write the file"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_INVALID_ARGUMENT
+  "Invalid argument"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_INVALID_CHARACTER
+  "Invalid character"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_INVALID_DOUBLE_QUOTE
+  "Invalid double quote"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_INVALID_PATH
+  "Invalid path"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_INVALID_TOKEN
+  "Invalid token"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_KEY_FIELD_NOT_SORTED
+  "Key field is not sorted"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_KEY_FIELD_NOT_UNIQUE
+  "Key field is not unique"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISMATCHED_FIELD_COUNT
+  "Field count is mismatched"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISMATCHED_FIELD_NAME
+  "Field name is mismatched"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_ARGUMENTS
+  "Missing arguments"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_BOM
+  "Missing the Unicode (UTF-16LE) BOM"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_CLOSING_DOUBLE_QUOTE
+  "Missing the closing double quote"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_COMMANDS
+  "Missing commands"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_FIELDS
+  "Missing fields"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_FIELD_NAME
+  "Missing the field name"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_MATCH_PATTERN
+  "Missing the match pattern"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_OPTION_NAME
+  "Missing the option name"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_MISSING_WMI_PATH
+  "Missing the `__PATH' property for the key field"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_TOO_MANY_ARGUMENTS
+  "Too many arguments"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_UNEXPECTED_EOF
+  "Unexpected end of the file"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_UNKNOWN_COMMAND
+  "Unknown command"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_UNKNOWN_FIELD_NAME
+  "Unknown field name"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_UNKNOWN_FILTER_TYPE
+  "Unknown filter type"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_UNKNOWN_MATCH_OPTION
+  "Unknown match option"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_UNKNOWN_OPTION_NAME
+  "Unknown option name"
+
+  ELEPHEYE_RESOURCE_IDS_REASON_UNKNOWN_SOURCE_TYPE
+  "Unknown source type"
+}

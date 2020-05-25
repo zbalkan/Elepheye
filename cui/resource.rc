@@ -1,0 +1,129 @@
+/*
+ * Elepheye
+ *
+ * Copyright (c) 2009 Michito Kaji
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#include <cui/resource.h>
+
+STRINGTABLE
+{
+  CUI_RESOURCE_IDS_ISSUE_PARSE_ARGUMENTS
+  "Failed to parse command-line arguments"
+
+  CUI_RESOURCE_IDS_LABEL_ADDED
+  "  Added: "
+
+  CUI_RESOURCE_IDS_LABEL_CHANGED
+  "Changed: "
+
+  CUI_RESOURCE_IDS_LABEL_CHANGED_FIELD
+  "         "
+
+  CUI_RESOURCE_IDS_LABEL_CHANGED_FROM
+  "           From: "
+
+  CUI_RESOURCE_IDS_LABEL_CHANGED_TO
+  "             To: "
+
+  CUI_RESOURCE_IDS_LABEL_ERROR
+  "ERROR"
+
+  CUI_RESOURCE_IDS_LABEL_HELP
+  "Usage:\
+  \n  elepheye [OPTION ...] SOURCE_TYPE [SOURCE_ARG ...] [COMMAND ...]\
+  \n\
+  \nOPTION:\
+  \n  -V\
+  \n    Print the version and exit.\
+  \n  -h\
+  \n    Print this help and exit.\
+  \n  -w\
+  \n    Enable warnings.\
+  \n\
+  \nCOMMAND:\
+  \n  -c SOURCE_TYPE [SOURCE_ARG ...]\
+  \n    Add the second source for comparing.\
+  \n  -f FILTER_TYPE [FILTER_ARG ...]\
+  \n    Add a filter to the last source or filter.\
+  \n\
+  \nSOURCE_TYPE and SOURCE_ARG:\
+  \n  csv PATH\
+  \n    Read records from a CSV file.\
+  \n  filesystem PATH ...\
+  \n    Generate records from filesystem entries.\
+  \n  registry PATH ...\
+  \n    Generate records from registry entries.\
+  \n  wmi PATH\
+  \n    Generate records from a WMI class.\
+  \n\
+  \nFILTER_TYPE and FILTER_ARG:\
+  \n  console\
+  \n    Print records to stdout.\
+  \n  csv PATH\
+  \n    Write records to a CSV file.\
+  \n  rule PATH\
+  \n    Modify records by a rule text file.\
+  \n\
+  \nExit status:\
+  \n  0: Succeeded\
+  \n  1: Failed\
+  \n\
+  \nExamples:\
+  \n  elepheye filesystem C:\\Target -f console\
+  \n  elepheye filesystem C:\\Target -f rule my.txt -f csv out.csv\
+  \n  elepheye filesystem C:\\Target -f rule my.txt -c csv in.csv\
+  \n  elepheye registry HKEY_LOCAL_MACHINE\\Target -f console\
+  \n  elepheye wmi root\\cimv2:Win32_UserAccount -f console\
+  \n\
+  \nSee `http://elepheye.sourceforge.net/' for more details.\
+  "
+
+  CUI_RESOURCE_IDS_LABEL_REMOVED
+  "Removed: "
+
+  CUI_RESOURCE_IDS_LABEL_SEPARATOR
+  ": "
+
+  CUI_RESOURCE_IDS_LABEL_VERSION
+  "elepheye-0.2"
+
+  CUI_RESOURCE_IDS_LABEL_WARNING
+  "WARNING"
+
+  CUI_RESOURCE_IDS_REASON_MISSING_FILTER_TYPE
+  "Missing FILTER_TYPE after the command `-f'"
+
+  CUI_RESOURCE_IDS_REASON_MISSING_SOURCE_TYPE
+  "Missing SOURCE_TYPE"
+
+  CUI_RESOURCE_IDS_REASON_MISSING_SOURCE_TYPE_TO_COMPARE
+  "Missing SOURCE_TYPE after the command `-c'"
+
+  CUI_RESOURCE_IDS_REASON_TOO_MANY_SOURCES
+  "Cannot use the command `-c' more than once"
+
+  CUI_RESOURCE_IDS_REASON_UNKNOWN_COMMAND
+  "Unknown command"
+
+  CUI_RESOURCE_IDS_REASON_UNKNOWN_OPTION
+  "Unknown option"
+}
