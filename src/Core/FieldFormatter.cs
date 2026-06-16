@@ -1,6 +1,4 @@
 using System.Buffers;
-using System.Runtime.InteropServices;
-using System.Security.AccessControl;
 using System.Text;
 using Microsoft.Win32;
 
@@ -17,38 +15,6 @@ public static class FieldFormatter
             ? $"{utc.Year:D4}-{utc.Month:D2}-{utc.Day:D2}T{utc.Hour:D2}:{utc.Minute:D2}:{utc.Second:D2}.{utc.Millisecond:D3}Z"
             : string.Empty;
     }
-
-    public static string FormatFileTime(long fileTime)
-    {
-        try
-        {
-            var dt = DateTime.FromFileTimeUtc(fileTime);
-            return FormatDateTime(dt);
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    public static string FormatHex<T>(T value) where T : struct
-    {
-        int size = Marshal.SizeOf<T>();
-        return size switch
-        {
-            1 => $"0x{Convert.ToByte(value):X2}",
-            2 => $"0x{Convert.ToUInt16(value):X4}",
-            4 => $"0x{Convert.ToUInt32(value):X8}",
-            8 => $"0x{Convert.ToUInt64(value):X16}",
-            _ => $"0x{Convert.ToInt64(value):X}"
-        };
-    }
-
-    public static string FormatHexUInt32(uint value) =>
-        $"0x{value:X8}";
-
-    public static string FormatHexUInt16(ushort value) =>
-        $"0x{value:X4}";
 
     public static string FormatFileAttributes(FileAttributes attrs)
     {

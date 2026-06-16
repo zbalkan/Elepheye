@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Elepheye.Core;
@@ -303,7 +302,7 @@ internal sealed class RuleWrappedRecord(
 {
     public string GetField(int index)
     {
-        if (disables[index]) return cache[index] ??= string.Empty;
+        if (disables[index]) return string.Empty;
         if (ignoresCase[index])
             return cache[index] ??= FieldFormatter.ToUpperInvariant(source.GetField(index));
         return source.GetField(index);
