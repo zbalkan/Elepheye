@@ -10,19 +10,16 @@ namespace Elepheye.Sources;
 
 internal enum FilesystemOption { IgnoreChildren = 0, EnableLastAccessTime = 1 }
 
+
 internal sealed class FilesystemRecord : IRecord
 {
     private static readonly RecyclableMemoryStreamManager _msm = new();
     private static readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
     private const int ReadBufferSize = 0x4000;
-
-    private readonly string _path;
     private readonly FileSystemInfo? _info;
-    private readonly uint _reparseTag;
-    private readonly bool _isStream;
     private readonly bool[] _options = new bool[2];
 
-    private string?[] _fields = new string?[14];
+    private readonly string?[] _fields = new string?[14];
 
     public static readonly string[] FieldNames =
     [
@@ -33,23 +30,27 @@ internal sealed class FilesystemRecord : IRecord
     public static readonly string[] OptionNames =
         ["ignore_children", "enable_last_access_time"];
 
-    internal FilesystemRecord(string path, FileSystemInfo? info = null, uint reparseTag = 0, bool isStream = false)
+    internal FilesystemRecord(string path, FileSystemInfo? info = null, IoReparseTag reparseTag = 0, bool isStream = false)
     {
-        _path = path;
+        Path = path;
         _info = info;
-        _reparseTag = reparseTag;
-        _isStream = isStream;
+        ReparseTag = reparseTag;
+        IsStream = isStream;
     }
 
-    public string Path => _path;
+    public string Path { get; }
     public bool IsDirectory => _info is DirectoryInfo;
-    public bool IsStream => _isStream;
+    public bool IsStream { get; }
     public bool IsReparsePoint => (_info?.Attributes & FileAttributes.ReparsePoint) != 0;
-    public uint ReparseTag => _reparseTag;
+    public IoReparseTag ReparseTag { get; }
 
     public string GetField(int index)
     {
-        if (index == 0) return _path;
+        if (index == 0)
+        {
+            return Path;
+        }
+
         return _fields[index] ??= ComputeField(index);
     }
 
@@ -58,23 +59,27 @@ internal sealed class FilesystemRecord : IRecord
 
     private string ComputeField(int index)
     {
-        if (_info is null) return string.Empty;
+        if (_info is null)
+        {
+            return string.Empty;
+        }
+
         try
         {
             return index switch
             {
                 1 => FieldFormatter.FormatFileAttributes(_info.Attributes),
-                2 => _isStream ? string.Empty : FieldFormatter.FormatDateTime(_info.CreationTimeUtc),
-                3 => (!_isStream && _options[(int)FilesystemOption.EnableLastAccessTime])
+                2 => IsStream ? string.Empty : FieldFormatter.FormatDateTime(_info.CreationTimeUtc),
+                3 => (!IsStream && _options[(int)FilesystemOption.EnableLastAccessTime])
                     ? FieldFormatter.FormatDateTime(_info.LastAccessTimeUtc) : string.Empty,
-                4 => _isStream ? string.Empty : FieldFormatter.FormatDateTime(_info.LastWriteTimeUtc),
+                4 => IsStream ? string.Empty : FieldFormatter.FormatDateTime(_info.LastWriteTimeUtc),
                 5 => IsDirectory ? string.Empty : FormatSize(),
-                6 => (!_isStream && IsReparsePoint) ? FieldFormatter.FormatReparseTag(_reparseTag) : string.Empty,
-                7 => (!_isStream && IsReparsePoint) ? FormatReparsePath() : string.Empty,
-                8 => _isStream ? string.Empty : FormatSddl(AccessControlSections.Owner),
-                9 => _isStream ? string.Empty : FormatSddl(AccessControlSections.Group),
-                10 => _isStream ? string.Empty : FormatSddl(AccessControlSections.Access),
-                11 => _isStream ? string.Empty : FormatSddl(AccessControlSections.Audit),
+                6 => (!IsStream && IsReparsePoint) ? FieldFormatter.FormatReparseTag(ReparseTag) : string.Empty,
+                7 => (!IsStream && IsReparsePoint) ? FormatReparsePath() : string.Empty,
+                8 => IsStream ? string.Empty : FormatSddl(AccessControlSections.Owner),
+                9 => IsStream ? string.Empty : FormatSddl(AccessControlSections.Group),
+                10 => IsStream ? string.Empty : FormatSddl(AccessControlSections.Access),
+                11 => IsStream ? string.Empty : FormatSddl(AccessControlSections.Audit),
                 12 => IsDirectory ? string.Empty : ComputeHashMd5(),
                 13 => IsDirectory ? string.Empty : ComputeHashSha1(),
                 _ => string.Empty
@@ -82,32 +87,38 @@ internal sealed class FilesystemRecord : IRecord
         }
         catch (Exception e) when (e is UnauthorizedAccessException or IOException)
         {
-            ExceptionSink.Log(e, $"reading field {FieldNames[index]} for {_path}",
+            ExceptionSink.Log(e, $"reading field {FieldNames[index]} for {Path}",
                 ExceptionLevel.Warning);
             return string.Empty;
         }
         catch (Exception e)
         {
-            ExceptionSink.Log(e, $"reading field {FieldNames[index]} for {_path}");
+            ExceptionSink.Log(e, $"reading field {FieldNames[index]} for {Path}");
             return string.Empty;
         }
     }
 
     private string FormatSize()
     {
-        if (_info is FileInfo fi) return fi.Length.ToString();
+        if (_info is FileInfo fi)
+        {
+            return fi.Length.ToString();
+        }
+
         return string.Empty;
     }
 
     private string FormatReparsePath()
     {
-        uint tag = _reparseTag;
-        if (tag != ReparseTag.IO_REPARSE_TAG_MOUNT_POINT &&
-            tag != ReparseTag.IO_REPARSE_TAG_SYMLINK)
+        var tag = ReparseTag;
+        if (tag != IoReparseTag.IO_REPARSE_TAG_MOUNT_POINT &&
+            tag != IoReparseTag.IO_REPARSE_TAG_SYMLINK)
+        {
             return string.Empty;
+        }
 
-        nint handle = NativeMethods.CreateFileW(
-            _path,
+        var handle = NativeMethods.CreateFileW(
+            Path,
             FileDesiredAccess.GENERIC_READ,
             FileFlagAttributes.FILE_SHARE_READ,
             nint.Zero,
@@ -115,42 +126,63 @@ internal sealed class FilesystemRecord : IRecord
             FileFlagAttributes.FILE_FLAG_BACKUP_SEMANTICS | FileFlagAttributes.FILE_FLAG_OPEN_REPARSE_POINT,
             nint.Zero);
 
-        if (handle == -1) return string.Empty;
+        if (handle == -1)
+        {
+            return string.Empty;
+        }
 
         try
         {
-            byte[] buffer = _pool.Rent(16384);
+            var buffer = _pool.Rent(16384);
             var pin = GCHandle.Alloc(buffer, GCHandleType.Pinned);
             try
             {
-                nint ptr = pin.AddrOfPinnedObject();
+                var ptr = pin.AddrOfPinnedObject();
                 if (!NativeMethods.DeviceIoControl(
                         handle,
                         FileFlagAttributes.FSCTL_GET_REPARSE_POINT,
                         nint.Zero, 0,
                         ptr, (uint)buffer.Length,
-                        out uint returned, nint.Zero))
+                        out var returned, nint.Zero))
+                {
                     return string.Empty;
+                }
 
                 // Parse reparse buffer: header is 8 bytes (tag=4, size=2, reserved=2)
-                if (tag == ReparseTag.IO_REPARSE_TAG_MOUNT_POINT)
+                if (tag == IoReparseTag.IO_REPARSE_TAG_MOUNT_POINT)
                 {
-                    if (returned < 20) return string.Empty;
+                    if (returned < 20)
+                    {
+                        return string.Empty;
+                    }
+
                     const int offset = 8; // skip header
-                    ushort substOffset = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset));
-                    ushort substLen = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset + 2));
-                    int pathStart = offset + 8 + substOffset;
-                    if (pathStart + substLen > returned) return string.Empty;
+                    var substOffset = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset));
+                    var substLen = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset + 2));
+                    var pathStart = offset + 8 + substOffset;
+                    if (pathStart + substLen > returned)
+                    {
+                        return string.Empty;
+                    }
+
                     return System.Text.Encoding.Unicode.GetString(buffer, pathStart, substLen);
                 }
                 else // SYMLINK
                 {
-                    if (returned < 24) return string.Empty;
+                    if (returned < 24)
+                    {
+                        return string.Empty;
+                    }
+
                     const int offset = 8; // skip header
-                    ushort substOffset = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset));
-                    ushort substLen = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset + 2));
-                    int pathStart = offset + 12 + substOffset; // +4 for Flags field
-                    if (pathStart + substLen > returned) return string.Empty;
+                    var substOffset = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset));
+                    var substLen = System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset + 2));
+                    var pathStart = offset + 12 + substOffset; // +4 for Flags field
+                    if (pathStart + substLen > returned)
+                    {
+                        return string.Empty;
+                    }
+
                     return System.Text.Encoding.Unicode.GetString(buffer, pathStart, substLen);
                 }
             }
@@ -184,7 +216,7 @@ internal sealed class FilesystemRecord : IRecord
         }
         catch (Exception e) when (e is UnauthorizedAccessException or InvalidOperationException)
         {
-            throw new UnauthorizedAccessException($"SDDL for {_path}", e);
+            throw new UnauthorizedAccessException($"SDDL for {Path}", e);
         }
     }
 
@@ -193,8 +225,8 @@ internal sealed class FilesystemRecord : IRecord
 
     private string ComputeHashCore(bool usemd5)
     {
-        nint handle = NativeMethods.CreateFileW(
-            _path,
+        var handle = NativeMethods.CreateFileW(
+            Path,
             FileDesiredAccess.GENERIC_READ,
             FileFlagAttributes.FILE_SHARE_READ,
             nint.Zero,
@@ -204,19 +236,24 @@ internal sealed class FilesystemRecord : IRecord
             FileFlagAttributes.FILE_FLAG_SEQUENTIAL_SCAN,
             nint.Zero);
 
-        if (handle == -1) return string.Empty;
+        if (handle == -1)
+        {
+            return string.Empty;
+        }
 
         try
         {
             using var sfh = new Microsoft.Win32.SafeHandles.SafeFileHandle(handle, ownsHandle: false);
             using var fs = new FileStream(sfh, FileAccess.Read, ReadBufferSize, isAsync: false);
             using var stream = _msm.GetStream();
-            byte[] buf = _pool.Rent(ReadBufferSize);
+            var buf = _pool.Rent(ReadBufferSize);
             try
             {
                 int read;
                 while ((read = fs.Read(buf, 0, buf.Length)) > 0)
+                {
                     stream.Write(buf, 0, read);
+                }
             }
             finally
             {
@@ -224,7 +261,7 @@ internal sealed class FilesystemRecord : IRecord
             }
 
             stream.Position = 0;
-            byte[] hash = usemd5
+            var hash = usemd5
                 ? MD5.HashData(stream)
                 : SHA1.HashData(stream);
             return FieldFormatter.FormatHashBytes(hash);

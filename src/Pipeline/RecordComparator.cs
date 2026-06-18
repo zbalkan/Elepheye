@@ -24,8 +24,8 @@ public static class RecordComparator
         await using var fromEnum = from.GetAsyncEnumerator(ct);
         await using var toEnum = to.GetAsyncEnumerator(ct);
 
-        bool hasFrom = await fromEnum.MoveNextAsync();
-        bool hasTo = await toEnum.MoveNextAsync();
+        var hasFrom = await fromEnum.MoveNextAsync();
+        var hasTo = await toEnum.MoveNextAsync();
 
         while (hasFrom && hasTo)
         {
@@ -33,18 +33,22 @@ public static class RecordComparator
             var f = fromEnum.Current;
             var t = toEnum.Current;
 
-            int cmp = FieldFormatter.CompareKey(f.GetField(0), t.GetField(0));
+            var cmp = FieldFormatter.CompareKey(f.GetField(0), t.GetField(0));
 
             if (cmp == 0)
             {
                 var changed = new List<int>();
-                for (int i = 1; i < fieldCount; i++)
+                for (var i = 1; i < fieldCount; i++)
                 {
                     if (f.GetField(i) != t.GetField(i))
+                    {
                         changed.Add(i);
+                    }
                 }
                 if (changed.Count > 0)
+                {
                     yield return new RecordDiff(f.GetField(0), DiffKind.Changed, f, t, changed);
+                }
 
                 hasFrom = await fromEnum.MoveNextAsync();
                 hasTo = await toEnum.MoveNextAsync();

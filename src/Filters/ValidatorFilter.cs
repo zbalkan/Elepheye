@@ -11,14 +11,19 @@ public sealed class ValidatorFilter(IAsyncEnumerable<IRecord> source)
         string? prevKey = null;
         await foreach (var record in source.WithCancellation(ct))
         {
-            string key = record.GetField(0);
+            var key = record.GetField(0);
             if (prevKey is not null)
             {
-                int cmp = FieldFormatter.CompareKey(prevKey, key);
+                var cmp = FieldFormatter.CompareKey(prevKey, key);
                 if (cmp > 0)
+                {
                     throw new UserException(key, "validate records", "records not sorted");
+                }
+
                 if (cmp == 0)
+                {
                     throw new UserException(key, "validate records", "duplicate key");
+                }
             }
             prevKey = key;
             yield return record;

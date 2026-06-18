@@ -8,33 +8,32 @@ namespace Elepheye.Pipeline;
 
 public sealed class RecordPipeline
 {
-    private RecordName _name;
     private IAsyncEnumerable<IRecord> _stream;
 
     public RecordPipeline(RecordName name, IAsyncEnumerable<IRecord> stream)
     {
-        _name = name;
+        Name = name;
         _stream = stream;
     }
 
-    public RecordName Name => _name;
+    public RecordName Name { get; }
     public IAsyncEnumerable<IRecord> Stream => _stream;
 
     public RecordPipeline WithCsvOutput(string path)
     {
-        _stream = new CsvOutputFilter(_stream, _name, path).ReadAsync();
+        _stream = new CsvOutputFilter(_stream, Name, path).ReadAsync();
         return this;
     }
 
     public RecordPipeline WithConsoleOutput()
     {
-        _stream = new ConsoleFilter(_stream, _name).ReadAsync();
+        _stream = new ConsoleFilter(_stream, Name).ReadAsync();
         return this;
     }
 
     public RecordPipeline WithRuleFilter(string rulePath)
     {
-        _stream = new RuleFilter(_stream, _name, rulePath).ReadAsync();
+        _stream = new RuleFilter(_stream, Name, rulePath).ReadAsync();
         return this;
     }
 
@@ -84,7 +83,9 @@ public sealed class RecordPipeline
             try
             {
                 await foreach (var r in src.ReadAsync(ct))
+                {
                     await channel.Writer.WriteAsync(r, ct);
+                }
             }
             finally
             {
@@ -102,11 +103,15 @@ public sealed class RecordPipeline
             while (src.Name is null && await channel.Reader.WaitToReadAsync(readCts.Token))
             {
                 while (channel.Reader.TryRead(out var r))
+                {
                     buffered.Add(r);
+                }
             }
             // Drain remaining batch
             while (channel.Reader.TryRead(out var r2))
+            {
                 buffered.Add(r2);
+            }
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested) { /* timeout ok */ }
 
@@ -115,9 +120,16 @@ public sealed class RecordPipeline
         async IAsyncEnumerable<IRecord> Merged(
             [EnumeratorCancellation] CancellationToken c = default)
         {
-            foreach (var r in buffered) yield return r;
-            await foreach (var r in channel.Reader.ReadAllAsync(c))
+            foreach (var r in buffered)
+            {
                 yield return r;
+            }
+
+            await foreach (var r in channel.Reader.ReadAllAsync(c))
+            {
+                yield return r;
+            }
+
             await producer;
         }
 

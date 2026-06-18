@@ -1,5 +1,7 @@
 using System.Buffers;
 using System.Text;
+using Elepheye.Native;
+using Elepheye.Sources;
 using Microsoft.Win32;
 
 namespace Elepheye.Core;
@@ -20,26 +22,86 @@ public static class FieldFormatter
     {
         var sb = new StringBuilder();
         sb.Append($"0x{(uint)attrs:X8}");
-        if ((attrs & FileAttributes.Archive) != 0) sb.Append(":ARCHIVE");
-        if ((attrs & FileAttributes.Compressed) != 0) sb.Append(":COMPRESSED");
-        if ((attrs & FileAttributes.Device) != 0) sb.Append(":DEVICE");
-        if ((attrs & FileAttributes.Directory) != 0) sb.Append(":DIRECTORY");
-        if ((attrs & FileAttributes.Encrypted) != 0) sb.Append(":ENCRYPTED");
-        if ((attrs & FileAttributes.Hidden) != 0) sb.Append(":HIDDEN");
-        if ((attrs & FileAttributes.Normal) != 0) sb.Append(":NORMAL");
-        if ((attrs & FileAttributes.NotContentIndexed) != 0) sb.Append(":NOT_CONTENT_INDEXED");
-        if ((attrs & FileAttributes.Offline) != 0) sb.Append(":OFFLINE");
-        if ((attrs & FileAttributes.ReadOnly) != 0) sb.Append(":READONLY");
-        if ((attrs & FileAttributes.ReparsePoint) != 0) sb.Append(":REPARSE_POINT");
-        if ((attrs & FileAttributes.SparseFile) != 0) sb.Append(":SPARSE_FILE");
-        if ((attrs & FileAttributes.System) != 0) sb.Append(":SYSTEM");
-        if ((attrs & FileAttributes.Temporary) != 0) sb.Append(":TEMPORARY");
+        if ((attrs & FileAttributes.Archive) != 0)
+        {
+            sb.Append(":ARCHIVE");
+        }
+
+        if ((attrs & FileAttributes.Compressed) != 0)
+        {
+            sb.Append(":COMPRESSED");
+        }
+
+        if ((attrs & FileAttributes.Device) != 0)
+        {
+            sb.Append(":DEVICE");
+        }
+
+        if ((attrs & FileAttributes.Directory) != 0)
+        {
+            sb.Append(":DIRECTORY");
+        }
+
+        if ((attrs & FileAttributes.Encrypted) != 0)
+        {
+            sb.Append(":ENCRYPTED");
+        }
+
+        if ((attrs & FileAttributes.Hidden) != 0)
+        {
+            sb.Append(":HIDDEN");
+        }
+
+        if ((attrs & FileAttributes.Normal) != 0)
+        {
+            sb.Append(":NORMAL");
+        }
+
+        if ((attrs & FileAttributes.NotContentIndexed) != 0)
+        {
+            sb.Append(":NOT_CONTENT_INDEXED");
+        }
+
+        if ((attrs & FileAttributes.Offline) != 0)
+        {
+            sb.Append(":OFFLINE");
+        }
+
+        if ((attrs & FileAttributes.ReadOnly) != 0)
+        {
+            sb.Append(":READONLY");
+        }
+
+        if ((attrs & FileAttributes.ReparsePoint) != 0)
+        {
+            sb.Append(":REPARSE_POINT");
+        }
+
+        if ((attrs & FileAttributes.SparseFile) != 0)
+        {
+            sb.Append(":SPARSE_FILE");
+        }
+
+        if ((attrs & FileAttributes.System) != 0)
+        {
+            sb.Append(":SYSTEM");
+        }
+
+        if ((attrs & FileAttributes.Temporary) != 0)
+        {
+            sb.Append(":TEMPORARY");
+        }
+
         const uint FILE_ATTRIBUTE_VIRTUAL = 0x00010000;
-        if (((uint)attrs & FILE_ATTRIBUTE_VIRTUAL) != 0) sb.Append(":VIRTUAL");
+        if (((uint)attrs & FILE_ATTRIBUTE_VIRTUAL) != 0)
+        {
+            sb.Append(":VIRTUAL");
+        }
+
         return sb.ToString();
     }
 
-    public static string FormatReparseTag(uint tag) => tag switch
+    public static string FormatReparseTag(IoReparseTag tag) => (uint)tag switch
     {
         0x8000000A => "DFS",
         0x80000012 => "DFSR",
@@ -57,7 +119,10 @@ public static class FieldFormatter
     {
         var sb = new StringBuilder(bytes.Length * 2);
         foreach (var b in bytes)
+        {
             sb.Append($"{b:x2}");
+        }
+
         return sb.ToString();
     }
 
@@ -76,7 +141,11 @@ public static class FieldFormatter
 
     public static string FormatVariantValue(object? value)
     {
-        if (value is null) return string.Empty;
+        if (value is null)
+        {
+            return string.Empty;
+        }
+
         return value switch
         {
             string s => s,
@@ -99,14 +168,18 @@ public static class FieldFormatter
 
     public static string FormatCimValue(object? value, string cimTypeName)
     {
-        if (value is null || value is DBNull) return string.Empty;
+        if (value is null || value is DBNull)
+        {
+            return string.Empty;
+        }
+
         if (value is Array arr)
         {
             var sb = new StringBuilder();
-            int i = 0;
+            var i = 0;
             foreach (var item in arr)
             {
-                string formatted = FormatVariantValue(item);
+                var formatted = FormatVariantValue(item);
                 sb.Append($"[{i}:{formatted.Length}]{formatted}");
                 i++;
             }
@@ -118,7 +191,7 @@ public static class FieldFormatter
     private static string FormatVariantArray(Array arr)
     {
         var sb = new StringBuilder();
-        for (int i = 0; i < arr.Length; i++)
+        for (var i = 0; i < arr.Length; i++)
         {
             var item = arr.GetValue(i);
             var formatted = FormatVariantValue(item);
@@ -130,7 +203,10 @@ public static class FieldFormatter
     public static string EscapeCsvField(string field)
     {
         if (field.AsSpan().IndexOfAny(_csvSpecialChars) < 0)
+        {
             return field;
+        }
+
         return $"\"{field.Replace("\"", "\"\"")}\"";
     }
 
@@ -139,9 +215,13 @@ public static class FieldFormatter
 
     public static int CompareKey(string key1, string key2)
     {
-        int caseSensitive = string.CompareOrdinal(key1, key2);
-        if (caseSensitive == 0) return 0;
-        int caseInsensitive = string.Compare(key1, key2, StringComparison.OrdinalIgnoreCase);
+        var caseSensitive = string.CompareOrdinal(key1, key2);
+        if (caseSensitive == 0)
+        {
+            return 0;
+        }
+
+        var caseInsensitive = string.Compare(key1, key2, StringComparison.OrdinalIgnoreCase);
         return caseInsensitive != 0 ? caseInsensitive : caseSensitive;
     }
 }

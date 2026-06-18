@@ -28,9 +28,13 @@ public sealed class CsvOutputFilter(IAsyncEnumerable<IRecord> source, RecordName
     private static async Task WriteRow(StreamWriter w, IReadOnlyList<string> fields, CancellationToken ct)
     {
         var sb = new StringBuilder();
-        for (int i = 0; i < fields.Count; i++)
+        for (var i = 0; i < fields.Count; i++)
         {
-            if (i > 0) sb.Append(',');
+            if (i > 0)
+            {
+                sb.Append(',');
+            }
+
             sb.Append(FieldFormatter.EscapeCsvField(fields[i]));
         }
         sb.Append("\r\n");

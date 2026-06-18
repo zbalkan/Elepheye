@@ -67,7 +67,7 @@ static async Task RunAsync(string[] args, CancellationToken ct)
     // Parse global options
     while (tokens.Count > 0 && tokens.Peek().StartsWith('-') && tokens.Peek().Length == 2)
     {
-        string opt = tokens.Peek();
+        var opt = tokens.Peek();
         switch (opt)
         {
             case "-V":
@@ -88,21 +88,23 @@ static async Task RunAsync(string[] args, CancellationToken ct)
     }
 
     // Parse first source
-    RecordPipeline pipeline = await ParseSourceAsync(tokens, ct);
+    var pipeline = await ParseSourceAsync(tokens, ct);
 
     // Parse commands and filters
     while (tokens.Count > 0)
     {
         if (!tokens.Peek().StartsWith('-'))
+        {
             throw new UserException(tokens.Peek(), "parse arguments", "unexpected token");
+        }
 
-        string cmd = tokens.Dequeue();
+        var cmd = tokens.Dequeue();
         switch (cmd)
         {
             case "-c":
             {
                 // Parse second source and compare
-                RecordPipeline second = await ParseSourceAsync(tokens, ct);
+                var second = await ParseSourceAsync(tokens, ct);
                 while (tokens.Count > 0 && tokens.Peek() == "-f")
                 {
                     tokens.Dequeue();
@@ -127,12 +129,16 @@ static async Task RunAsync(string[] args, CancellationToken ct)
 static async Task<RecordPipeline> ParseSourceAsync(Queue<string> tokens, CancellationToken ct)
 {
     if (tokens.Count == 0 || tokens.Peek().StartsWith('-'))
+    {
         throw new UserException(null, "parse arguments", "missing source type");
+    }
 
-    string sourceType = tokens.Dequeue();
+    var sourceType = tokens.Dequeue();
     var sourceArgs = new List<string>();
     while (tokens.Count > 0 && !tokens.Peek().StartsWith('-'))
+    {
         sourceArgs.Add(tokens.Dequeue());
+    }
 
     return sourceType switch
     {
@@ -161,12 +167,16 @@ static async Task<RecordPipeline> ParseSourceAsync(Queue<string> tokens, Cancell
 static RecordPipeline ApplyFilter(RecordPipeline pipeline, Queue<string> tokens)
 {
     if (tokens.Count == 0 || tokens.Peek().StartsWith('-'))
+    {
         throw new UserException(null, "parse arguments", "missing filter type");
+    }
 
-    string filterType = tokens.Dequeue();
+    var filterType = tokens.Dequeue();
     var filterArgs = new List<string>();
     while (tokens.Count > 0 && !tokens.Peek().StartsWith('-'))
+    {
         filterArgs.Add(tokens.Dequeue());
+    }
 
     return filterType switch
     {
@@ -194,16 +204,20 @@ static async Task CompareAsync(RecordPipeline from, RecordPipeline to, Cancellat
     var toName = to.Name;
 
     if (fromName.FieldNames.Count != toName.FieldNames.Count)
-        throw new UserException(null, "compare records", "mismatched field count");
-
-    for (int i = 0; i < fromName.FieldNames.Count; i++)
     {
-        if (fromName.FieldNames[i] != toName.FieldNames[i])
-            throw new UserException(null, "compare records",
-                $"mismatched field name at index {i}: {fromName.FieldNames[i]} vs {toName.FieldNames[i]}");
+        throw new UserException(null, "compare records", "mismatched field count");
     }
 
-    int fieldCount = fromName.FieldNames.Count;
+    for (var i = 0; i < fromName.FieldNames.Count; i++)
+    {
+        if (fromName.FieldNames[i] != toName.FieldNames[i])
+        {
+            throw new UserException(null, "compare records",
+                $"mismatched field name at index {i}: {fromName.FieldNames[i]} vs {toName.FieldNames[i]}");
+        }
+    }
+
+    var fieldCount = fromName.FieldNames.Count;
     var fieldNames = fromName.FieldNames;
 
     var fromValidated = new ValidatorFilter(from.Stream).ReadAsync(ct);
@@ -221,7 +235,7 @@ static async Task CompareAsync(RecordPipeline from, RecordPipeline to, Cancellat
                 break;
             case DiffKind.Changed:
                 Console.WriteLine($"CHANGED | {diff.Key}");
-                foreach (int idx in diff.ChangedFields!)
+                foreach (var idx in diff.ChangedFields!)
                 {
                     Console.WriteLine($"  FIELD | {fieldNames[idx]}");
                     Console.WriteLine($"  FROM  | {diff.From!.GetField(idx)}");

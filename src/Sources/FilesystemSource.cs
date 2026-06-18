@@ -34,7 +34,10 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
         foreach (var p in paths)
         {
             var rec = BuildRecord(p);
-            if (rec is not null) queue.Add(rec);
+            if (rec is not null)
+            {
+                queue.Add(rec);
+            }
         }
 
         while (queue.Count > 0)
@@ -49,7 +52,10 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
             {
                 foreach (var stream in EnumerateStreams(current))
                 {
-                    if (stream is not null) queue.Add(stream);
+                    if (stream is not null)
+                    {
+                        queue.Add(stream);
+                    }
                 }
 
                 if (current.IsDirectory && !current.IsReparsePoint &&
@@ -57,7 +63,10 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
                 {
                     foreach (var child in EnumerateChildren(current))
                     {
-                        if (child is not null) queue.Add(child);
+                        if (child is not null)
+                        {
+                            queue.Add(child);
+                        }
                     }
                 }
             }
@@ -70,13 +79,15 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
     {
         try
         {
-            FileSystemInfo info = Directory.Exists(path)
+            var info = Directory.Exists(path)
                 ? new DirectoryInfo(path)
                 : (FileSystemInfo)new FileInfo(path);
 
-            uint reparseTag = 0;
+            var reparseTag = IoReparseTag.IO_REPARSE_TAG_RESERVED_ZERO;
             if ((info.Attributes & FileAttributes.ReparsePoint) != 0)
+            {
                 reparseTag = GetReparseTag(path);
+            }
 
             return new FilesystemRecord(path, info, reparseTag);
         }
@@ -87,18 +98,20 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
         }
     }
 
-    private static uint GetReparseTag(string path)
+    private static IoReparseTag GetReparseTag(string path)
     {
         try
         {
             var di = new DirectoryInfo(path);
             if (di.Exists && di.LinkTarget is not null)
-                return 0xA000000C; // SYMLINK as approximation; exact tag via DeviceIoControl
+            {
+                return IoReparseTag.IO_REPARSE_TAG_SYMLINK; // SYMLINK as approximation; exact tag via DeviceIoControl
+            }
         }
         catch { /* ignore */ }
 
         // Read exact tag via DeviceIoControl
-        nint handle = NativeMethods.CreateFileW(
+        var handle = NativeMethods.CreateFileW(
             path,
             FileDesiredAccess.GENERIC_READ,
             FileFlagAttributes.FILE_SHARE_READ,
@@ -107,25 +120,29 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
             FileFlagAttributes.FILE_FLAG_BACKUP_SEMANTICS | FileFlagAttributes.FILE_FLAG_OPEN_REPARSE_POINT,
             nint.Zero);
 
-        if (handle == -1) return 0;
+        if (handle == -1)
+        {
+            return IoReparseTag.IO_REPARSE_TAG_RESERVED_ZERO;
+        }
 
         try
         {
-            byte[] buf = ArrayPool<byte>.Shared.Rent(16384); // need full buffer for DeviceIoControl
+            var buf = ArrayPool<byte>.Shared.Rent(16384); // need full buffer for DeviceIoControl
             var pin = GCHandle.Alloc(buf, GCHandleType.Pinned);
             try
             {
-                nint ptr = pin.AddrOfPinnedObject();
+                var ptr = pin.AddrOfPinnedObject();
                 if (NativeMethods.DeviceIoControl(
                         handle,
                         FileFlagAttributes.FSCTL_GET_REPARSE_POINT,
                         nint.Zero, 0,
                         ptr, (uint)buf.Length,
-                        out uint returned, nint.Zero) && returned >= 4)
+                        out var returned, nint.Zero) && returned >= 4)
                 {
-                    return System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(buf.AsSpan());
+                    var val = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(buf.AsSpan());
+                    return (IoReparseTag)val;
                 }
-                return 0;
+                return IoReparseTag.IO_REPARSE_TAG_RESERVED_ZERO;
             }
             finally
             {
@@ -141,7 +158,7 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
 
     private static IEnumerable<FilesystemRecord> EnumerateStreams(FilesystemRecord parent)
     {
-        nint handle = NativeMethods.CreateFileW(
+        var handle = NativeMethods.CreateFileW(
             parent.Path,
             FileDesiredAccess.GENERIC_READ,
             FileFlagAttributes.FILE_SHARE_READ,
@@ -150,11 +167,14 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
             FileFlagAttributes.FILE_FLAG_BACKUP_SEMANTICS | FileFlagAttributes.FILE_FLAG_OPEN_REPARSE_POINT,
             nint.Zero);
 
-        if (handle == -1) yield break;
+        if (handle == -1)
+        {
+            yield break;
+        }
 
-        nint context = nint.Zero;
-        int headerSize = Marshal.SizeOf<WIN32_STREAM_ID>();
-        byte[] headerBuf = ArrayPool<byte>.Shared.Rent(headerSize);
+        var context = nint.Zero;
+        var headerSize = Marshal.SizeOf<WIN32_STREAM_ID>();
+        var headerBuf = ArrayPool<byte>.Shared.Rent(headerSize);
         var headerPin = GCHandle.Alloc(headerBuf, GCHandleType.Pinned);
 
         try
@@ -162,31 +182,39 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
             while (true)
             {
                 Array.Clear(headerBuf, 0, headerSize);
-                nint headerPtr = headerPin.AddrOfPinnedObject();
+                var headerPtr = headerPin.AddrOfPinnedObject();
 
                 if (!NativeMethods.BackupRead(handle, headerPtr, (uint)headerSize,
-                        out uint read, false, false, ref context))
+                        out var read, false, false, ref context))
+                {
                     break;
-                if (read == 0) break;
+                }
+
+                if (read == 0)
+                {
+                    break;
+                }
 
                 var streamId = Marshal.PtrToStructure<WIN32_STREAM_ID>(headerPtr);
 
                 if (streamId.dwStreamNameSize > 0)
                 {
-                    int nameSize = (int)streamId.dwStreamNameSize;
-                    byte[] nameBuf = ArrayPool<byte>.Shared.Rent(nameSize);
+                    var nameSize = (int)streamId.dwStreamNameSize;
+                    var nameBuf = ArrayPool<byte>.Shared.Rent(nameSize);
                     var namePin = GCHandle.Alloc(nameBuf, GCHandleType.Pinned);
                     try
                     {
-                        nint namePtr = namePin.AddrOfPinnedObject();
+                        var namePtr = namePin.AddrOfPinnedObject();
                         if (!NativeMethods.BackupRead(handle, namePtr, (uint)nameSize,
-                                out uint nameRead, false, false, ref context))
+                                out var nameRead, false, false, ref context))
+                        {
                             break;
+                        }
 
                         if (streamId.dwStreamId == StreamId.BACKUP_ALTERNATE_DATA && nameRead == nameSize)
                         {
-                            string streamName = System.Text.Encoding.Unicode.GetString(nameBuf, 0, nameSize);
-                            string streamPath = parent.Path + streamName;
+                            var streamName = System.Text.Encoding.Unicode.GetString(nameBuf, 0, nameSize);
+                            var streamPath = parent.Path + streamName;
 
                             FilesystemRecord? streamRec = null;
                             try
@@ -198,7 +226,10 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
                             {
                                 ExceptionSink.Log(e, $"reading stream {streamPath}");
                             }
-                            if (streamRec is not null) yield return streamRec;
+                            if (streamRec is not null)
+                            {
+                                yield return streamRec;
+                            }
                         }
                     }
                     finally
@@ -209,7 +240,7 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
                 }
 
                 // Skip stream body
-                long bodySize = streamId.Size.QuadPart;
+                var bodySize = streamId.Size.QuadPart;
                 if (bodySize > 0)
                 {
                     NativeMethods.BackupSeek(handle,
@@ -223,7 +254,10 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
             headerPin.Free();
             // Abort to release context
             if (context != nint.Zero)
+            {
                 NativeMethods.BackupRead(handle, nint.Zero, 0, out _, true, false, ref context);
+            }
+
             ArrayPool<byte>.Shared.Return(headerBuf);
             NativeMethods.CloseHandle(handle);
         }
@@ -231,7 +265,7 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
 
     private static IEnumerable<FilesystemRecord> EnumerateChildren(FilesystemRecord parent)
     {
-        string dirPath = parent.Path;
+        var dirPath = parent.Path;
         IEnumerable<string> entries;
         try
         {
@@ -247,7 +281,10 @@ public sealed class FilesystemSource(IReadOnlyList<string> paths)
         foreach (var entry in entries)
         {
             var rec = BuildRecord(entry);
-            if (rec is not null) yield return rec;
+            if (rec is not null)
+            {
+                yield return rec;
+            }
         }
     }
 }

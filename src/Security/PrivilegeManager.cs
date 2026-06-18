@@ -18,14 +18,18 @@ public sealed class PrivilegeManager : IDisposable
                 NativeMethods.GetCurrentProcess(),
                 TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
                 out _token))
+        {
             throw new Win32Exception(Marshal.GetLastWin32Error(), "OpenProcessToken failed");
+        }
     }
 
     public void EnablePrivilege(string privilegeName)
     {
         if (!NativeMethods.LookupPrivilegeValueW(null, privilegeName, out var luid))
+        {
             throw new Win32Exception(Marshal.GetLastWin32Error(),
                 $"LookupPrivilegeValue({privilegeName}) failed");
+        }
 
         var tp = new TOKEN_PRIVILEGES
         {
@@ -38,9 +42,11 @@ public sealed class PrivilegeManager : IDisposable
         };
 
         NativeMethods.AdjustTokenPrivileges(_token, false, ref tp, 0, nint.Zero, nint.Zero);
-        int err = Marshal.GetLastWin32Error();
+        var err = Marshal.GetLastWin32Error();
         if (err != 0)
+        {
             throw new Win32Exception(err, $"AdjustTokenPrivileges({privilegeName}) failed");
+        }
     }
 
     public void Dispose()

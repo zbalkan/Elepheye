@@ -11,12 +11,14 @@ public sealed class WmiSource(string wmiPath)
     public async IAsyncEnumerable<IRecord> ReadAsync(
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        int colon = wmiPath.IndexOf(':');
+        var colon = wmiPath.IndexOf(':');
         if (colon < 0 || colon == 0 || colon == wmiPath.Length - 1)
+        {
             throw new UserException(wmiPath, "read WMI", "invalid path (expected namespace:class)");
+        }
 
-        string ns = wmiPath[..colon];
-        string className = wmiPath[(colon + 1)..];
+        var ns = wmiPath[..colon];
+        var className = wmiPath[(colon + 1)..];
 
         using var session = CimSession.Create(".");
 
@@ -26,7 +28,9 @@ public sealed class WmiSource(string wmiPath)
         foreach (var prop in classDef.CimClassProperties)
         {
             if (prop.Name != "__PATH")
+            {
                 fieldNames.Add(prop.Name);
+            }
         }
 
         Name = new RecordName();
@@ -39,13 +43,13 @@ public sealed class WmiSource(string wmiPath)
             ct.ThrowIfCancellationRequested();
             var record = new SkeletonRecord(fieldNames.Count);
 
-            for (int i = 0; i < fieldNames.Count; i++)
+            for (var i = 0; i < fieldNames.Count; i++)
             {
-                string fname = fieldNames[i];
+                var fname = fieldNames[i];
                 try
                 {
                     var prop = instance.CimInstanceProperties[fname];
-                    string val = prop is null
+                    var val = prop is null
                         ? string.Empty
                         : FieldFormatter.FormatCimValue(prop.Value, prop.CimType.ToString());
                     record.SetField(i, val);

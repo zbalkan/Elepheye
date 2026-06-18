@@ -51,7 +51,9 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
                 {
                     using var key = subKey is not null ? root.OpenSubKey(subKey) : root;
                     if (key is not null)
+                    {
                         all.Add(BuildValueRecord(path, key, valueName!));
+                    }
                 }
             }
             catch (Exception e)
@@ -88,7 +90,10 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
                     RegistryRights.QueryValues | RegistryRights.ReadPermissions)
                 : root;
 
-            if (key is null) return;
+            if (key is null)
+            {
+                return;
+            }
 
             results.Add(BuildKeyRecord(keyPath, key));
 
@@ -96,7 +101,7 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
             foreach (var subKeyName in key.GetSubKeyNames())
             {
                 ct.ThrowIfCancellationRequested();
-                string childPath = keyPath + "\\" + subKeyName;
+                var childPath = keyPath + "\\" + subKeyName;
                 try
                 {
                     EnumerateKey(root,
@@ -114,7 +119,7 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
             foreach (var valueName in key.GetValueNames())
             {
                 ct.ThrowIfCancellationRequested();
-                string valuePath = keyPath + "\\\\" + valueName;
+                var valuePath = keyPath + "\\\\" + valueName;
                 try
                 {
                     results.Add(BuildValueRecord(valuePath, key, valueName));
@@ -133,7 +138,10 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
         }
         finally
         {
-            if (key != root) key?.Dispose();
+            if (key != root)
+            {
+                key?.Dispose();
+            }
         }
     }
 
@@ -225,21 +233,25 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
     internal static (RegistryHive? hive, string? machineName, string? subKey, string? valueName, bool isKey)
         ParseRegistryPath(string path)
     {
-        string localPath = path;
+        var localPath = path;
         string? machineName = null;
 
         if (path.StartsWith(@"\\", StringComparison.Ordinal))
         {
-            int nextSep = path.IndexOf('\\', 2);
-            if (nextSep < 0) return (null, null, null, null, false);
+            var nextSep = path.IndexOf('\\', 2);
+            if (nextSep < 0)
+            {
+                return (null, null, null, null, false);
+            }
+
             machineName = path[..nextSep];
             localPath = path[(nextSep + 1)..];
         }
 
         // Detect value separator "\\"
         string? valueName = null;
-        bool isKey = true;
-        int valueSepIdx = localPath.IndexOf(@"\\", StringComparison.Ordinal);
+        var isKey = true;
+        var valueSepIdx = localPath.IndexOf(@"\\", StringComparison.Ordinal);
         if (valueSepIdx >= 0)
         {
             valueName = localPath[(valueSepIdx + 2)..];
@@ -248,13 +260,15 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
         }
 
         // Split root key from sub key
-        int firstSep = localPath.IndexOf('\\');
-        string rootName = firstSep < 0 ? localPath : localPath[..firstSep];
-        string? subKey = firstSep < 0 ? null : localPath[(firstSep + 1)..];
+        var firstSep = localPath.IndexOf('\\');
+        var rootName = firstSep < 0 ? localPath : localPath[..firstSep];
+        var subKey = firstSep < 0 ? null : localPath[(firstSep + 1)..];
         if (subKey?.EndsWith('\\') == true)
+        {
             subKey = subKey[..^1];
+        }
 
-        RegistryHive? hive = rootName.ToUpperInvariant() switch
+        var hive = rootName.ToUpperInvariant() switch
         {
             "HKCR" or "HKEY_CLASSES_ROOT" => RegistryHive.ClassesRoot,
             "HKCC" or "HKEY_CURRENT_CONFIG" => RegistryHive.CurrentConfig,

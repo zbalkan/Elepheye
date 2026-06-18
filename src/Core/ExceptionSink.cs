@@ -11,8 +11,16 @@ public static class ExceptionSink
 
     public static void Log(ElepheyeException e)
     {
-        if (e.Level > _maxLevel) _maxLevel = e.Level;
-        if (e.Level == ExceptionLevel.Warning && !_verbose) return;
+        if (e.Level > _maxLevel)
+        {
+            _maxLevel = e.Level;
+        }
+
+        if (e.Level == ExceptionLevel.Warning && !_verbose)
+        {
+            return;
+        }
+
         var label = e.Level == ExceptionLevel.Warning ? "WARNING" : "ERROR";
         Console.Error.WriteLine($"{label} | {e.Message}");
     }

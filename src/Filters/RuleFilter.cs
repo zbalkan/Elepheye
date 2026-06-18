@@ -24,7 +24,7 @@ internal sealed class RuleMatch(int field, bool inverts, Wildcard pattern)
 {
     public bool Match(IRecord record)
     {
-        bool result = pattern.Match(record.GetField(field));
+        var result = pattern.Match(record.GetField(field));
         return inverts ? !result : result;
     }
 }
@@ -46,9 +46,9 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
     {
         _rules ??= await ParseRulesAsync(ct);
 
-        bool[] disables = new bool[name.FieldNames.Count];
-        bool[] ignoresCase = new bool[name.FieldNames.Count];
-        string?[] cachedFields = new string?[name.FieldNames.Count];
+        var disables = new bool[name.FieldNames.Count];
+        var ignoresCase = new bool[name.FieldNames.Count];
+        var cachedFields = new string?[name.FieldNames.Count];
 
         await foreach (var record in source.WithCancellation(ct))
         {
@@ -56,7 +56,7 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
             Array.Clear(ignoresCase, 0, ignoresCase.Length);
             Array.Clear(cachedFields, 0, cachedFields.Length);
 
-            bool drops = false;
+            var drops = false;
             var wrapped = new RuleWrappedRecord(record, disables, ignoresCase, cachedFields, name.FieldNames.Count);
 
             foreach (var entry in _rules)
@@ -64,21 +64,42 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
                 if (entry.Match(wrapped))
                 {
                     ApplyCommands(entry.Commands, disables, ignoresCase, wrapped, record);
-                    if (entry.Commands.Drops) drops = true;
-                    if (entry.Commands.Exits) break;
+                    if (entry.Commands.Drops)
+                    {
+                        drops = true;
+                    }
+
+                    if (entry.Commands.Exits)
+                    {
+                        break;
+                    }
                 }
             }
 
-            if (!drops) yield return wrapped;
+            if (!drops)
+            {
+                yield return wrapped;
+            }
         }
     }
 
     private static void ApplyCommands(RuleCommands cmds, bool[] disables, bool[] ignoresCase,
         RuleWrappedRecord wrapped, IRecord source)
     {
-        foreach (int f in cmds.FieldsToDisable) disables[f] = true;
-        foreach (int f in cmds.FieldsToIgnoreCase) ignoresCase[f] = true;
-        foreach (int o in cmds.OptionsToSet) source.SetOption(o);
+        foreach (var f in cmds.FieldsToDisable)
+        {
+            disables[f] = true;
+        }
+
+        foreach (var f in cmds.FieldsToIgnoreCase)
+        {
+            ignoresCase[f] = true;
+        }
+
+        foreach (var o in cmds.OptionsToSet)
+        {
+            source.SetOption(o);
+        }
     }
 
     private async Task<List<RuleEntry>> ParseRulesAsync(CancellationToken ct)
@@ -88,9 +109,16 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
 
         foreach (var line in lines)
         {
-            if (line.Count == 0) continue;
+            if (line.Count == 0)
+            {
+                continue;
+            }
+
             var entry = ParseLine(line);
-            if (entry is not null) entries.Add(entry);
+            if (entry is not null)
+            {
+                entries.Add(entry);
+            }
         }
 
         return entries;
@@ -99,32 +127,40 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
     private async Task<List<List<RuleToken>>> TokenizeFileAsync(CancellationToken ct)
     {
         var lines = new List<List<RuleToken>>();
-        string text = await File.ReadAllTextAsync(rulePath, Encoding.UTF8, ct);
+        var text = await File.ReadAllTextAsync(rulePath, Encoding.UTF8, ct);
         var span = text.AsSpan();
-        int i = 0;
+        var i = 0;
 
         while (i <= span.Length)
         {
             var tokens = new List<RuleToken>();
             var tokenBuf = new StringBuilder();
-            bool quoted = false;
-            bool hasContent = false;
+            var quoted = false;
+            var hasContent = false;
 
             while (i < span.Length)
             {
-                char c = span[i];
+                var c = span[i];
 
                 if (c == '#' && !quoted)
                 {
                     // Comment to end of line
-                    while (i < span.Length && span[i] != '\n' && span[i] != '\r') i++;
+                    while (i < span.Length && span[i] != '\n' && span[i] != '\r')
+                    {
+                        i++;
+                    }
+
                     break;
                 }
                 if ((c == '\n' || c == '\r') && !quoted)
                 {
                     FlushToken(tokens, tokenBuf, ref hasContent, quoted: false);
                     i++;
-                    if (i < span.Length && span[i] == '\n' && c == '\r') i++;
+                    if (i < span.Length && span[i] == '\n' && c == '\r')
+                    {
+                        i++;
+                    }
+
                     break;
                 }
                 if ((c == ' ' || c == '\t') && !quoted)
@@ -169,9 +205,14 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
             FlushToken(tokens, tokenBuf, ref hasContent, quoted: false);
 
             if (tokens.Count > 0)
+            {
                 lines.Add(tokens);
+            }
 
-            if (i >= span.Length) break;
+            if (i >= span.Length)
+            {
+                break;
+            }
         }
 
         return lines;
@@ -179,12 +220,16 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
 
     private static void FlushToken(List<RuleToken> tokens, StringBuilder buf, ref bool hasContent, bool quoted)
     {
-        if (!hasContent && !quoted) return;
-        string val = buf.ToString();
+        if (!hasContent && !quoted)
+        {
+            return;
+        }
+
+        var val = buf.ToString();
         buf.Clear();
         hasContent = false;
 
-        bool isSwitch = false;
+        var isSwitch = false;
         if (!quoted && val.StartsWith("--", StringComparison.Ordinal))
         {
             val = val[2..];
@@ -197,13 +242,17 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
     private RuleEntry? ParseLine(List<RuleToken> tokens)
     {
         var entry = new RuleEntry();
-        int pos = 0;
+        var pos = 0;
 
         // Parse matches: <field> [--ignore-case] [--not] <pattern> [--and ...]
         do
         {
-            if (pos >= tokens.Count) return null;
-            int fieldIdx = FindField(tokens[pos].Value);
+            if (pos >= tokens.Count)
+            {
+                return null;
+            }
+
+            var fieldIdx = FindField(tokens[pos].Value);
             if (fieldIdx < 0)
             {
                 ExceptionSink.Log(new UserException(tokens[pos].Value, "parse rule", "unknown field name"));
@@ -211,18 +260,25 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
             }
             pos++;
 
-            bool ignoreCase = false;
-            bool invert = false;
+            var ignoreCase = false;
+            var invert = false;
             while (pos < tokens.Count && tokens[pos].IsSwitch)
             {
-                string sw = tokens[pos].Value;
+                var sw = tokens[pos].Value;
                 if (sw == "ignore-case") { ignoreCase = true; pos++; }
                 else if (sw == "not") { invert = true; pos++; }
-                else break;
+                else
+                {
+                    break;
+                }
             }
 
-            if (pos >= tokens.Count) return null;
-            string pattern = tokens[pos].Value;
+            if (pos >= tokens.Count)
+            {
+                return null;
+            }
+
+            var pattern = tokens[pos].Value;
             pos++;
 
             entry.Matches.Add(new RuleMatch(fieldIdx, invert, new Wildcard(pattern, ignoreCase)));
@@ -237,7 +293,7 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
                 ExceptionSink.Log(new UserException(tokens[pos].Value, "parse rule", "expected switch"));
                 return null;
             }
-            string cmd = tokens[pos].Value;
+            var cmd = tokens[pos].Value;
             pos++;
 
             switch (cmd)
@@ -251,25 +307,40 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
                 case "disable":
                     while (pos < tokens.Count && !tokens[pos].IsSwitch)
                     {
-                        int idx = FindField(tokens[pos].Value);
-                        if (idx == 0) entry.Commands.Drops = true;
-                        else if (idx > 0) entry.Commands.FieldsToDisable.Add(idx);
+                        var idx = FindField(tokens[pos].Value);
+                        if (idx == 0)
+                        {
+                            entry.Commands.Drops = true;
+                        }
+                        else if (idx > 0)
+                        {
+                            entry.Commands.FieldsToDisable.Add(idx);
+                        }
+
                         pos++;
                     }
                     break;
                 case "ignore-case":
                     while (pos < tokens.Count && !tokens[pos].IsSwitch)
                     {
-                        int idx = FindField(tokens[pos].Value);
-                        if (idx >= 0) entry.Commands.FieldsToIgnoreCase.Add(idx);
+                        var idx = FindField(tokens[pos].Value);
+                        if (idx >= 0)
+                        {
+                            entry.Commands.FieldsToIgnoreCase.Add(idx);
+                        }
+
                         pos++;
                     }
                     break;
                 case "set":
                     while (pos < tokens.Count && !tokens[pos].IsSwitch)
                     {
-                        int idx = FindOption(tokens[pos].Value);
-                        if (idx >= 0) entry.Commands.OptionsToSet.Add(idx);
+                        var idx = FindOption(tokens[pos].Value);
+                        if (idx >= 0)
+                        {
+                            entry.Commands.OptionsToSet.Add(idx);
+                        }
+
                         pos++;
                     }
                     break;
@@ -284,15 +355,27 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
 
     private int FindField(string fieldName)
     {
-        for (int i = 0; i < name.FieldNames.Count; i++)
-            if (name.FieldNames[i] == fieldName) return i;
+        for (var i = 0; i < name.FieldNames.Count; i++)
+        {
+            if (name.FieldNames[i] == fieldName)
+            {
+                return i;
+            }
+        }
+
         return -1;
     }
 
     private int FindOption(string optionName)
     {
-        for (int i = 0; i < name.OptionNames.Count; i++)
-            if (name.OptionNames[i] == optionName) return i;
+        for (var i = 0; i < name.OptionNames.Count; i++)
+        {
+            if (name.OptionNames[i] == optionName)
+            {
+                return i;
+            }
+        }
+
         return -1;
     }
 }
@@ -302,9 +385,16 @@ internal sealed class RuleWrappedRecord(
 {
     public string GetField(int index)
     {
-        if (disables[index]) return string.Empty;
+        if (disables[index])
+        {
+            return string.Empty;
+        }
+
         if (ignoresCase[index])
+        {
             return cache[index] ??= FieldFormatter.ToUpperInvariant(source.GetField(index));
+        }
+
         return source.GetField(index);
     }
 

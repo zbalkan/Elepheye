@@ -15,10 +15,22 @@ public class ElepheyeException(string? context, string issue, string? reason = n
     private static string BuildMessage(string? context, string issue, string? reason, int hresult)
     {
         var parts = new List<string>(4);
-        if (context is not null) parts.Add(context);
+        if (context is not null)
+        {
+            parts.Add(context);
+        }
+
         parts.Add(issue);
-        if (reason is not null) parts.Add(reason);
-        if (hresult != 0) parts.Add(HResultToString(hresult));
+        if (reason is not null)
+        {
+            parts.Add(reason);
+        }
+
+        if (hresult != 0)
+        {
+            parts.Add(HResultToString(hresult));
+        }
+
         return string.Join(" | ", parts);
     }
 
