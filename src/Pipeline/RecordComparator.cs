@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elepheye.Core;
 
 namespace Elepheye.Pipeline;
@@ -19,7 +20,7 @@ public static class RecordComparator
         IAsyncEnumerable<IRecord> from,
         IAsyncEnumerable<IRecord> to,
         int fieldCount,
-        System.Threading.CancellationToken ct = default)
+        [EnumeratorCancellation] CancellationToken ct = default)
     {
         await using var fromEnum = from.GetAsyncEnumerator(ct);
         await using var toEnum = to.GetAsyncEnumerator(ct);
