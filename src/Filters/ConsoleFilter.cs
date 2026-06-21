@@ -9,7 +9,7 @@ public sealed class ConsoleFilter(IAsyncEnumerable<IRecord> source, RecordName n
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         var maxLen = name.FieldNames.Max(n => n.Length);
-        var sep = " | ";
+        const string sep = " | ";
 
         await foreach (var record in source.WithCancellation(ct))
         {

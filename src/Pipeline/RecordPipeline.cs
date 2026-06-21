@@ -131,6 +131,6 @@ public sealed class RecordPipeline
             await producer;
         }
 
-        return new RecordPipeline(name, Merged());
+        return new RecordPipeline(name, Merged(ct));
     }
 }

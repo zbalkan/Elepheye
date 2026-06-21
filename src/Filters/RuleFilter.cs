@@ -57,7 +57,7 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
             Array.Clear(cachedFields, 0, cachedFields.Length);
 
             var drops = false;
-            var wrapped = new RuleWrappedRecord(record, disables, ignoresCase, cachedFields, name.FieldNames.Count);
+            var wrapped = new RuleWrappedRecord(record, disables, ignoresCase, cachedFields);
 
             foreach (var entry in _rules)
             {
@@ -386,7 +386,7 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
 }
 
 internal sealed class RuleWrappedRecord(
-    IRecord source, bool[] disables, bool[] ignoresCase, string?[] cache, int fieldCount) : IRecord
+    IRecord source, bool[] disables, bool[] ignoresCase, string?[] cache) : IRecord
 {
     public string GetField(int index)
     {

@@ -10,12 +10,9 @@ public static class FieldFormatter
     private static readonly SearchValues<char> _csvSpecialChars =
         SearchValues.Create(['"', ',', '\r', '\n']);
 
-    public static string FormatDateTime(DateTime utc)
-    {
-        return utc.Kind == DateTimeKind.Utc
+    public static string FormatDateTime(DateTime utc) => utc.Kind == DateTimeKind.Utc
             ? $"{utc.Year:D4}-{utc.Month:D2}-{utc.Day:D2}T{utc.Hour:D2}:{utc.Minute:D2}:{utc.Second:D2}.{utc.Millisecond:D3}Z"
             : string.Empty;
-    }
 
     public static string FormatFileAttributes(FileAttributes attrs)
     {

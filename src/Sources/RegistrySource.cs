@@ -86,8 +86,7 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
         {
             key = subKey is not null
                 ? root.OpenSubKey(subKey, RegistryKeyPermissionCheck.ReadSubTree,
-                    RegistryRights.ReadKey | RegistryRights.EnumerateSubKeys |
-                    RegistryRights.QueryValues | RegistryRights.ReadPermissions)
+                    RegistryRights.ReadKey)
                 : root;
 
             if (key is null)
