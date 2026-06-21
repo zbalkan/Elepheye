@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Elepheye": {
+      "commandName": "Project",
+      "commandLineArgs": "-w filesystem d:\\"
+    }
+  }
+}

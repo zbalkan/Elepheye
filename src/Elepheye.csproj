@@ -4,10 +4,9 @@
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Optimize>true</Optimize>
 		<AssemblyName>elepheye</AssemblyName>
 		<RootNamespace>Elepheye</RootNamespace>
-		<LangVersion>preview</LangVersion>
+		<LangVersion>latest</LangVersion>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
