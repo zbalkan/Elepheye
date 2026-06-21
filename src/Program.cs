@@ -108,7 +108,7 @@ static async Task RunAsync(string[] args, CancellationToken ct)
                     tokens.Dequeue();
                     second = ApplyFilter(second, tokens);
                 }
-                await CompareAsync(pipeline, second, ct);
+                await CompareAsync(second, pipeline, ct);
                 return;
             }
             case "-f":
@@ -214,18 +214,18 @@ static async Task CompareAsync(RecordPipeline from, RecordPipeline to, Cancellat
         switch (diff.Kind)
         {
             case DiffKind.Removed:
-                Console.WriteLine($"REMOVED | {diff.Key}");
+                Console.WriteLine($"Removed: {diff.Key}");
                 break;
             case DiffKind.Added:
-                Console.WriteLine($"ADDED   | {diff.Key}");
+                Console.WriteLine($"  Added: {diff.Key}");
                 break;
             case DiffKind.Changed:
-                Console.WriteLine($"CHANGED | {diff.Key}");
+                Console.WriteLine($"Changed: {diff.Key}");
                 foreach (int idx in diff.ChangedFields!)
                 {
-                    Console.WriteLine($"  FIELD | {fieldNames[idx]}");
-                    Console.WriteLine($"  FROM  | {diff.From!.GetField(idx)}");
-                    Console.WriteLine($"  TO    | {diff.To!.GetField(idx)}");
+                    Console.WriteLine($"         {fieldNames[idx]}");
+                    Console.WriteLine($"           From: {diff.From!.GetField(idx)}");
+                    Console.WriteLine($"             To: {diff.To!.GetField(idx)}");
                 }
                 break;
         }

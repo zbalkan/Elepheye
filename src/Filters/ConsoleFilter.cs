@@ -9,14 +9,13 @@ public sealed class ConsoleFilter(IAsyncEnumerable<IRecord> source, RecordName n
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         int maxLen = name.FieldNames.Max(n => n.Length);
-        string sep = " | ";
 
         await foreach (var record in source.WithCancellation(ct))
         {
             for (int i = 0; i < name.FieldNames.Count; i++)
             {
                 string label = name.FieldNames[i].PadLeft(maxLen);
-                Console.WriteLine($"{label}{sep}{record.GetField(i)}");
+                Console.WriteLine($"{label}: {record.GetField(i)}");
             }
             Console.WriteLine();
             yield return record;
