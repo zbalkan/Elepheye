@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace Elepheye.Native;
 
@@ -77,4 +78,29 @@ internal static partial class NativeMethods
         uint BufferLength,
         nint PreviousState,
         nint ReturnLength);
+
+    [DllImport("advapi32.dll", EntryPoint = "RegQueryInfoKeyW", SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static extern int RegQueryInfoKeyW(
+        SafeRegistryHandle hKey,
+        char[]? lpClass,
+        ref uint lpcClass,
+        nint lpReserved,
+        out uint lpcSubKeys,
+        out uint lpcMaxSubKeyLen,
+        out uint lpcMaxClassLen,
+        out uint lpcValues,
+        out uint lpcMaxValueNameLen,
+        out uint lpcMaxValueLen,
+        out uint lpcSecurityDescriptor,
+        out long lpftLastWriteTime);
+
+    [DllImport("advapi32.dll", EntryPoint = "RegQueryValueExW", SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static extern int RegQueryValueExW(
+        SafeRegistryHandle hKey,
+        string? lpValueName,
+        nint lpReserved,
+        out uint lpType,
+        byte[]? lpData,
+        ref uint lpcbData);
+
 }

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
 using Elepheye.Core;
+using Elepheye.Native;
 using Microsoft.Win32;
 
 namespace Elepheye.Sources;
@@ -149,11 +150,7 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
         var r = new SkeletonRecord(11);
         r.SetField(0, path);
 
-        // class (key class name - not available via managed RegistryKey API, leave empty)
-        r.SetField(1, string.Empty);
-
-        // last_write_time — not directly available via managed API, use P/Invoke or skip
-        r.SetField(2, string.Empty);
+        TrySetKeyInfo(r, key);
 
         // owner, group, dacl, sacl via RegistrySecurity
         TrySetSddl(r, 5, 6, 7, 8, key, path);
@@ -167,30 +164,17 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
         var r = new SkeletonRecord(11);
         r.SetField(0, path);
 
-        // type
         try
         {
-            var kind = key.GetValueKind(valueName);
-            r.SetField(3, FieldFormatter.FormatRegistryValueType(kind));
-
-            // size — get raw bytes
-            var raw = key.GetValue(valueName, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-            if (raw is byte[] bytes)
+            var raw = QueryRawValue(key, valueName);
+            if (raw is not null)
             {
-                r.SetField(4, bytes.Length.ToString());
+                r.SetField(3, FieldFormatter.FormatRegistryValueType(raw.Value.Type));
+                r.SetField(4, raw.Value.Data.Length.ToString());
                 r.SetField(9, FieldFormatter.FormatHashBytes(
-                    System.Security.Cryptography.MD5.HashData(bytes)));
+                    System.Security.Cryptography.MD5.HashData(raw.Value.Data)));
                 r.SetField(10, FieldFormatter.FormatHashBytes(
-                    System.Security.Cryptography.SHA1.HashData(bytes)));
-            }
-            else if (raw is not null)
-            {
-                var encoded = System.Text.Encoding.Unicode.GetBytes(raw.ToString() ?? string.Empty);
-                r.SetField(4, encoded.Length.ToString());
-                r.SetField(9, FieldFormatter.FormatHashBytes(
-                    System.Security.Cryptography.MD5.HashData(encoded)));
-                r.SetField(10, FieldFormatter.FormatHashBytes(
-                    System.Security.Cryptography.SHA1.HashData(encoded)));
+                    System.Security.Cryptography.SHA1.HashData(raw.Value.Data)));
             }
         }
         catch (Exception e)
@@ -200,6 +184,67 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
         }
 
         return r;
+    }
+
+    private static void TrySetKeyInfo(SkeletonRecord r, RegistryKey key)
+    {
+        var classLength = 256u;
+        var classBuffer = new char[classLength + 1];
+        var result = NativeMethods.RegQueryInfoKeyW(
+            key.Handle,
+            classBuffer,
+            ref classLength,
+            nint.Zero,
+            out _, out _, out _, out _, out _, out _, out _,
+            out var lastWriteTime);
+
+        if (result != 0)
+        {
+            return;
+        }
+
+        r.SetField(1, classLength == 0 ? string.Empty : new string(classBuffer, 0, (int)classLength));
+        r.SetField(2, FieldFormatter.FormatDateTime(DateTime.FromFileTimeUtc(lastWriteTime)));
+    }
+
+    private static (uint Type, byte[] Data)? QueryRawValue(RegistryKey key, string valueName)
+    {
+        var size = 0u;
+        var result = NativeMethods.RegQueryValueExW(
+            key.Handle,
+            valueName.Length == 0 ? null : valueName,
+            nint.Zero,
+            out var type,
+            null,
+            ref size);
+
+        const int ERROR_SUCCESS = 0;
+        const int ERROR_MORE_DATA = 234;
+        if (result is not (ERROR_SUCCESS or ERROR_MORE_DATA))
+        {
+            return null;
+        }
+
+        var data = new byte[size];
+        result = NativeMethods.RegQueryValueExW(
+            key.Handle,
+            valueName.Length == 0 ? null : valueName,
+            nint.Zero,
+            out type,
+            data,
+            ref size);
+
+        if (result != ERROR_SUCCESS)
+        {
+            return null;
+        }
+
+        if (size != data.Length)
+        {
+            Array.Resize(ref data, (int)size);
+        }
+
+        return (type, data);
     }
 
     private static void TrySetSddl(SkeletonRecord r, int ownerIdx, int groupIdx,

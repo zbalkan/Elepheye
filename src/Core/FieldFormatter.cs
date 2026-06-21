@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text;
 using Elepheye.Native;
+using Microsoft.Management.Infrastructure;
 using Microsoft.Win32;
 
 namespace Elepheye.Core;
@@ -121,16 +122,23 @@ public static class FieldFormatter
         return sb.ToString();
     }
 
-    public static string FormatRegistryValueType(RegistryValueKind kind) => kind switch {
-        RegistryValueKind.Binary => "BINARY",
-        RegistryValueKind.DWord => "DWORD",
-        RegistryValueKind.ExpandString => "EXPAND_SZ",
-        RegistryValueKind.MultiString => "MULTI_SZ",
-        RegistryValueKind.None => "NONE",
-        RegistryValueKind.QWord => "QWORD",
-        RegistryValueKind.String => "SZ",
-        RegistryValueKind.Unknown => $"0x{(int)kind:X8}",
-        _ => $"0x{(int)kind:X8}"
+    public static string FormatRegistryValueType(RegistryValueKind kind) =>
+        FormatRegistryValueType(unchecked((uint)kind));
+
+    public static string FormatRegistryValueType(uint type) => type switch {
+        0 => "NONE",
+        1 => "SZ",
+        2 => "EXPAND_SZ",
+        3 => "BINARY",
+        4 => "DWORD",
+        5 => "DWORD_BIG_ENDIAN",
+        6 => "LINK",
+        7 => "MULTI_SZ",
+        8 => "RESOURCE_LIST",
+        9 => "FULL_RESOURCE_DESCRIPTOR",
+        10 => "RESOURCE_REQUIREMENTS_LIST",
+        11 => "QWORD",
+        _ => $"0x{type:X8}"
     };
 
     public static string FormatVariantValue(object? value)
@@ -159,38 +167,80 @@ public static class FieldFormatter
         };
     }
 
-    public static string FormatCimValue(object? value, string cimTypeName)
+    public static string FormatCimValue(object? value, CimType cimType)
     {
         if (value is null || value is DBNull)
         {
             return string.Empty;
         }
 
+        var vtPrefix = $"0x{MapCimTypeToVariantType(cimType):X4}:";
         if (value is Array arr)
         {
-            var sb = new StringBuilder();
-            var i = 0;
-            foreach (var item in arr)
-            {
-                var formatted = FormatVariantValue(item);
-                sb.Append($"[{i}:{formatted.Length}]{formatted}");
-                i++;
-            }
-            return sb.ToString();
+            return vtPrefix + FormatVariantArray(arr);
         }
-        return FormatVariantValue(value);
+
+        return vtPrefix + FormatVariantValue(value);
     }
+
+    private static ushort MapCimTypeToVariantType(CimType cimType)
+    {
+        var isArray = false;
+        var name = cimType.ToString();
+        if (name.EndsWith("Array", StringComparison.Ordinal))
+        {
+            isArray = true;
+            name = name[..^"Array".Length];
+        }
+
+        var vt = name switch {
+            nameof(CimType.Boolean) => (ushort)0x000B,
+            nameof(CimType.Char16) => (ushort)0x0012,
+            nameof(CimType.DateTime) => (ushort)0x0008,
+            nameof(CimType.Real32) => (ushort)0x0004,
+            nameof(CimType.Real64) => (ushort)0x0005,
+            nameof(CimType.Reference) => (ushort)0x0008,
+            nameof(CimType.SInt8) => (ushort)0x0010,
+            nameof(CimType.SInt16) => (ushort)0x0002,
+            nameof(CimType.SInt32) => (ushort)0x0003,
+            nameof(CimType.SInt64) => (ushort)0x0014,
+            nameof(CimType.String) => (ushort)0x0008,
+            nameof(CimType.UInt8) => (ushort)0x0011,
+            nameof(CimType.UInt16) => (ushort)0x0012,
+            nameof(CimType.UInt32) => (ushort)0x0013,
+            nameof(CimType.UInt64) => (ushort)0x0015,
+            _ => (ushort)0x000C
+        };
+
+        return isArray ? (ushort)(0x2000 | vt) : vt;
+    }
+
 
     private static string FormatVariantArray(Array arr)
     {
         var sb = new StringBuilder();
-        for (var i = 0; i < arr.Length; i++)
-        {
-            var item = arr.GetValue(i);
-            var formatted = FormatVariantValue(item);
-            sb.Append($"[{i}:{formatted.Length}]{formatted}");
-        }
+        var indices = new int[arr.Rank];
+        AppendArrayValues(arr, 0, indices, sb);
         return sb.ToString();
+    }
+
+    private static void AppendArrayValues(Array arr, int dimension, int[] indices, StringBuilder sb)
+    {
+        for (var i = arr.GetLowerBound(dimension); i <= arr.GetUpperBound(dimension); i++)
+        {
+            indices[dimension] = i;
+            if (dimension + 1 < arr.Rank)
+            {
+                AppendArrayValues(arr, dimension + 1, indices, sb);
+                continue;
+            }
+
+            var formatted = FormatVariantValue(arr.GetValue(indices));
+            sb.Append('[');
+            sb.AppendJoin(',', indices);
+            sb.Append($":{formatted.Length}]");
+            sb.Append(formatted);
+        }
     }
 
     public static string EscapeCsvField(string field)

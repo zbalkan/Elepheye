@@ -51,7 +51,7 @@ public sealed class WmiSource(string wmiPath)
                     var prop = instance.CimInstanceProperties[fname];
                     var val = prop is null
                         ? string.Empty
-                        : FieldFormatter.FormatCimValue(prop.Value, prop.CimType.ToString());
+                        : FieldFormatter.FormatCimValue(prop.Value, prop.CimType);
                     record.SetField(i, val);
                 }
                 catch (Exception e)
