@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.Text;
 using Elepheye.Native;
-using Elepheye.Sources;
 using Microsoft.Win32;
 
 namespace Elepheye.Core;
@@ -101,8 +100,7 @@ public static class FieldFormatter
         return sb.ToString();
     }
 
-    public static string FormatReparseTag(IoReparseTag tag) => (uint)tag switch
-    {
+    public static string FormatReparseTag(IoReparseTag tag) => (uint)tag switch {
         0x8000000A => "DFS",
         0x80000012 => "DFSR",
         0x80000005 => "DRIVER_EXTENDER",
@@ -126,8 +124,7 @@ public static class FieldFormatter
         return sb.ToString();
     }
 
-    public static string FormatRegistryValueType(RegistryValueKind kind) => kind switch
-    {
+    public static string FormatRegistryValueType(RegistryValueKind kind) => kind switch {
         RegistryValueKind.Binary => "BINARY",
         RegistryValueKind.DWord => "DWORD",
         RegistryValueKind.ExpandString => "EXPAND_SZ",
@@ -146,8 +143,7 @@ public static class FieldFormatter
             return string.Empty;
         }
 
-        return value switch
-        {
+        return value switch {
             string s => s,
             bool b => b ? "True" : "False",
             byte by => by.ToString(),

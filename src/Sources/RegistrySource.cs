@@ -268,8 +268,7 @@ public sealed class RegistrySource(IReadOnlyList<string> paths)
             subKey = subKey[..^1];
         }
 
-        var hive = rootName.ToUpperInvariant() switch
-        {
+        var hive = rootName.ToUpperInvariant() switch {
             "HKCR" or "HKEY_CLASSES_ROOT" => RegistryHive.ClassesRoot,
             "HKCC" or "HKEY_CURRENT_CONFIG" => RegistryHive.CurrentConfig,
             "HKCU" or "HKEY_CURRENT_USER" => RegistryHive.CurrentUser,

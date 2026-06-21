@@ -2,7 +2,8 @@ using System.ComponentModel;
 
 namespace Elepheye.Core;
 
-public enum ExceptionLevel { Warning, Error }
+public enum ExceptionLevel
+{ Warning, Error }
 
 public class ElepheyeException(string? context, string issue, string? reason = null, int hresult = 0)
     : Exception(BuildMessage(context, issue, reason, hresult))

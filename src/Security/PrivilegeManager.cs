@@ -31,11 +31,9 @@ public sealed class PrivilegeManager : IDisposable
                 $"LookupPrivilegeValue({privilegeName}) failed");
         }
 
-        var tp = new TOKEN_PRIVILEGES
-        {
+        var tp = new TOKEN_PRIVILEGES {
             PrivilegeCount = 1,
-            Privileges = new LUID_AND_ATTRIBUTES
-            {
+            Privileges = new LUID_AND_ATTRIBUTES {
                 Luid = luid,
                 Attributes = TokenPrivilegeAttributes.SE_PRIVILEGE_ENABLED
             }

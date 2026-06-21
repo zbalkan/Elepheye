@@ -71,15 +71,13 @@ public sealed class RecordPipeline
         var src = new WmiSource(wmiPath);
 
         // Use Channel to buffer WMI records from background task
-        var channel = Channel.CreateBounded<IRecord>(new BoundedChannelOptions(512)
-        {
+        var channel = Channel.CreateBounded<IRecord>(new BoundedChannelOptions(512) {
             SingleReader = true,
             SingleWriter = true,
             FullMode = BoundedChannelFullMode.Wait
         });
 
-        var producer = Task.Run(async () =>
-        {
+        var producer = Task.Run(async () => {
             try
             {
                 await foreach (var r in src.ReadAsync(ct))

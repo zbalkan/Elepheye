@@ -1,7 +1,6 @@
 using Elepheye.Core;
 using Elepheye.Filters;
 using Elepheye.Pipeline;
-using Elepheye.Sources;
 
 const string Version = "1.0.0";
 const string Help = """
@@ -74,14 +73,17 @@ static async Task RunAsync(string[] args, CancellationToken ct)
                 tokens.Dequeue();
                 Console.WriteLine($"elepheye {Version}");
                 return;
+
             case "-h":
                 tokens.Dequeue();
                 Console.WriteLine(Help);
                 return;
+
             case "-w":
                 tokens.Dequeue();
                 ExceptionSink.EnableWarnings();
                 break;
+
             default:
                 throw new UserException(opt, "parse arguments", "unknown option");
         }
@@ -102,20 +104,21 @@ static async Task RunAsync(string[] args, CancellationToken ct)
         switch (cmd)
         {
             case "-c":
-            {
-                // Parse second source and compare
-                var second = await ParseSourceAsync(tokens, ct);
-                while (tokens.Count > 0 && tokens.Peek() == "-f")
                 {
-                    tokens.Dequeue();
-                    second = ApplyFilter(second, tokens);
+                    // Parse second source and compare
+                    var second = await ParseSourceAsync(tokens, ct);
+                    while (tokens.Count > 0 && tokens.Peek() == "-f")
+                    {
+                        tokens.Dequeue();
+                        second = ApplyFilter(second, tokens);
+                    }
+                    await CompareAsync(pipeline, second, ct);
+                    return;
                 }
-                await CompareAsync(pipeline, second, ct);
-                return;
-            }
             case "-f":
                 pipeline = ApplyFilter(pipeline, tokens);
                 break;
+
             default:
                 throw new UserException(cmd, "parse arguments", "unknown command");
         }
@@ -140,8 +143,7 @@ static async Task<RecordPipeline> ParseSourceAsync(Queue<string> tokens, Cancell
         sourceArgs.Add(tokens.Dequeue());
     }
 
-    return sourceType switch
-    {
+    return sourceType switch {
         "csv" => sourceArgs.Count == 1
             ? RecordPipeline.FromCsv(sourceArgs[0])
             : throw new UserException("csv", "create source",
@@ -178,8 +180,7 @@ static RecordPipeline ApplyFilter(RecordPipeline pipeline, Queue<string> tokens)
         filterArgs.Add(tokens.Dequeue());
     }
 
-    return filterType switch
-    {
+    return filterType switch {
         "csv" => filterArgs.Count == 1
             ? pipeline.WithCsvOutput(filterArgs[0])
             : throw new UserException("csv", "create filter",
@@ -230,9 +231,11 @@ static async Task CompareAsync(RecordPipeline from, RecordPipeline to, Cancellat
             case DiffKind.Removed:
                 Console.WriteLine($"REMOVED | {diff.Key}");
                 break;
+
             case DiffKind.Added:
                 Console.WriteLine($"ADDED   | {diff.Key}");
                 break;
+
             case DiffKind.Changed:
                 Console.WriteLine($"CHANGED | {diff.Key}");
                 foreach (var idx in diff.ChangedFields!)

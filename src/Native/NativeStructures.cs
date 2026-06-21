@@ -254,7 +254,6 @@ public enum IoReparseTag : uint
     IO_REPARSE_TAG_WCI_LINK_1 = 0xA0001027
 }
 
-
 internal static class FileDesiredAccess
 {
     public const uint GENERIC_READ = 0x80000000u;

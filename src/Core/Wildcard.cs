@@ -4,6 +4,7 @@ public sealed class Wildcard(string pattern, bool ignoreCase)
 {
     private readonly string _pattern = ignoreCase
         ? FieldFormatter.ToUpperInvariant(pattern) : pattern;
+
     private readonly bool _ignoreCase = ignoreCase;
 
     public bool Match(string s)

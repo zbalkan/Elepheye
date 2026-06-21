@@ -12,7 +12,8 @@ public sealed class RecordDiff(string key, DiffKind kind, IRecord? from, IRecord
     public IReadOnlyList<int>? ChangedFields { get; } = changedFields;
 }
 
-public enum DiffKind { Removed, Added, Changed }
+public enum DiffKind
+{ Removed, Added, Changed }
 
 public static class RecordComparator
 {

@@ -8,8 +8,8 @@ using Microsoft.IO;
 
 namespace Elepheye.Sources;
 
-internal enum FilesystemOption { IgnoreChildren = 0, EnableLastAccessTime = 1 }
-
+internal enum FilesystemOption
+{ IgnoreChildren = 0, EnableLastAccessTime = 1 }
 
 internal sealed class FilesystemRecord : IRecord
 {
@@ -27,6 +27,7 @@ internal sealed class FilesystemRecord : IRecord
         "last_write_time", "size", "reparse_tag", "reparse_path",
         "owner", "group", "dacl", "sacl", "md5", "sha1"
     ];
+
     public static readonly string[] OptionNames =
         ["ignore_children", "enable_last_access_time"];
 
@@ -55,6 +56,7 @@ internal sealed class FilesystemRecord : IRecord
     }
 
     public bool GetOption(int index) => _options[index];
+
     public void SetOption(int index) => _options[index] = true;
 
     private string ComputeField(int index)
@@ -66,8 +68,7 @@ internal sealed class FilesystemRecord : IRecord
 
         try
         {
-            return index switch
-            {
+            return index switch {
                 1 => FieldFormatter.FormatFileAttributes(_info.Attributes),
                 2 => IsStream ? string.Empty : FieldFormatter.FormatDateTime(_info.CreationTimeUtc),
                 3 => (!IsStream && _options[(int)FilesystemOption.EnableLastAccessTime])
@@ -221,6 +222,7 @@ internal sealed class FilesystemRecord : IRecord
     }
 
     private string ComputeHashMd5() => ComputeHashCore(usemd5: true);
+
     private string ComputeHashSha1() => ComputeHashCore(usemd5: false);
 
     private string ComputeHashCore(bool usemd5)

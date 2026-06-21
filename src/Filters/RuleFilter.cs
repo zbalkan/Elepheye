@@ -301,9 +301,11 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
                 case "exit":
                     entry.Commands.Exits = true;
                     break;
+
                 case "drop":
                     entry.Commands.Drops = true;
                     break;
+
                 case "disable":
                     while (pos < tokens.Count && !tokens[pos].IsSwitch)
                     {
@@ -320,6 +322,7 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
                         pos++;
                     }
                     break;
+
                 case "ignore-case":
                     while (pos < tokens.Count && !tokens[pos].IsSwitch)
                     {
@@ -332,6 +335,7 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
                         pos++;
                     }
                     break;
+
                 case "set":
                     while (pos < tokens.Count && !tokens[pos].IsSwitch)
                     {
@@ -344,6 +348,7 @@ public sealed class RuleFilter(IAsyncEnumerable<IRecord> source, RecordName name
                         pos++;
                     }
                     break;
+
                 default:
                     ExceptionSink.Log(new UserException(cmd, "parse rule", "unknown command"));
                     return null;
@@ -399,5 +404,6 @@ internal sealed class RuleWrappedRecord(
     }
 
     public bool GetOption(int index) => source.GetOption(index);
+
     public void SetOption(int index) => source.SetOption(index);
 }
